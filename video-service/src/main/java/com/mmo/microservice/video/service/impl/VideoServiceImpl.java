@@ -46,7 +46,7 @@ public class VideoServiceImpl implements VideoService {
 //        logger.info("Start saveLstVideoDownload");
         List<ReelRespDTO> rs = new ArrayList<>();
         PageRespDTO page = webClientBuilder.build().get()
-                .uri("http://page-service/api/page/v1"+p_id)
+                .uri("http://page-service/api/page/v1/"+p_id)
                 .retrieve()
                 .bodyToMono(PageRespDTO.class)
                 .block();
