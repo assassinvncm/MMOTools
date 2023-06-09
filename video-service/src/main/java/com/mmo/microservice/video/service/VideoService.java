@@ -5,6 +5,7 @@ import com.mmo.microservice.video.dto.ReelRespDTO;
 import com.mmo.microservice.video.dto.ReelVideoDTO;
 import com.mmo.microservice.video.dto.UploadReelsDTO;
 import com.mmo.microservice.video.model.r_reel_vid;
+import org.springframework.data.repository.query.Param;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -20,4 +21,5 @@ public interface VideoService {
     boolean uploadLocalReels(String page_access_token, String video_id, byte[] videoData) throws IOException;
     String checkUploadSessionStatus(String page_access_token, String video_id);
     boolean publishReels(String page_access_token, String video_id,String description, String tittle) throws UnsupportedEncodingException;
+    public List<String> getVidByPageIDAndAccID(Long pid, String acc_id);
 }

@@ -46,86 +46,63 @@ public class DownloadServiceImpl implements DownloadService {
 
     public List<DownloadVideoDTO> downloadProcess(String acc_id, Long p_id, String save_path, String tiktok_url, String snaptik_url) throws InterruptedException{
         List<DownloadVideoDTO> rs = new ArrayList<DownloadVideoDTO>();
-        // Tạo một instance của Playwright
+        String parentFolderPath = save_path+ p_id;
+        String childFolderName = acc_id;
+        String folderDownload = save_path+ p_id+ File.separator+ acc_id;
+        File folderDownloads = new File(folderDownload);
+        if (!folderDownloads.exists()) {
+            File parentFolder = new File(parentFolderPath);
+            File newFolder = new File(parentFolder, childFolderName);
+            boolean created = newFolder.mkdirs();
+            if (!created) {
+                System.out.println("Không thể tạo thư mục!");
+                throw new IllegalArgumentException("Không thể tạo thư mục");
+            }
+            System.out.println("Thư mục tạo thành công!");
+        }
         Playwright playwright = Playwright.create();
-
-        // Tạo một trình duyệt Chromium
         Browser browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(false));
         Page page = browser.newPage();
         String url_download = tiktok_url+acc_id;
-        // Điều hướng đến trang web
         page.navigate(url_download);
-        Thread.sleep(10000);
-        autoScroll(page);
-        List<ElementHandle> links = page
-                .querySelectorAll("div.tiktok-1qb12g8-DivThreeColumnContainer > div > div > div > div > div > a");
-
-        List<ElementHandle> videoDes = page
-                .querySelectorAll("div.tiktok-1qb12g8-DivThreeColumnContainer.eegew6e2 > div > div > div > a");
-
+        Thread.sleep(10000L);
+        this.autoScroll(page);
+        List<ElementHandle> links = (List<ElementHandle>)page.querySelectorAll("div.tiktok-x6y88p-DivItemContainerV2.e19c29qe8 > div > div > div > a");
+        List<ElementHandle> videoDes = (List<ElementHandle>)page.querySelectorAll("div.tiktok-1qb12g8-DivThreeColumnContainer.eegew6e2 > div > div > div > a");
         int count = 0;
-//		String[] videoDesArr = new String[videoDes.size()];
-//		for (ElementHandle vd : videoDes) {
-//			String des = vd.innerText();
-//							System.out.println("des " + count + ": " + des);
-//			videoDesArr[count] = des;
-//			count++;
-//		}
-        Map<String, String> urlMap = new HashMap<>();
-//		String[] urlArr = new String[links.size()];
-        List<String> mainArr = new ArrayList<>();
+        Map<String, String> urlMap = new HashMap<String, String>();
+        List<String> mainArr = new ArrayList<String>();
         count = 0;
         for (ElementHandle link : links) {
             String href = link.getAttribute("href");
-//							System.out.println("url" + count + ": " + href);
-//			urlArr[count] = href;
             String[] arrVid = href.split("/");
             String vid_id = arrVid[arrVid.length - 1];
-//			urlArrID[count] = vid_id;
             mainArr.add(vid_id);
             urlMap.put(vid_id, href);
-            count++;
+            ++count;
         }
-
-        List<String> arrSub = new ArrayList();//rReelVidRepo.getVidByPageIDAndAccID(p_id, acc_id);
-        List<String> downloadList = getDownloadList(mainArr, arrSub);
-        System.out.println("Start download video: " + downloadList.size());
-
-        for (int i = 0; i < downloadList.size(); i++) {
+        List<String> arrSub = videoService.getVidByPageIDAndAccID((long)p_id, acc_id);
+        List<String> downloadList = this.getDownloadList(mainArr, arrSub);
+        System.out.println(downloadList.size());
+        for (int i = 0; i < downloadList.size(); ++i) {
             page.navigate(snaptik_url);
             String urlVid = urlMap.get(downloadList.get(i));
             ElementHandle snapSearchBox = page.querySelector("input[name=\"url\"]");
             snapSearchBox.type(urlVid);
-
             String[] arrVid = urlVid.split("/");
             String vid_id = arrVid[arrVid.length - 1];
-
             ElementHandle button = page.querySelector(".button-go");
             button.click();
             ElementHandle downloadButton = page.waitForSelector(".video-links > a");
-
             ElementHandle titleDiv = page.querySelector(".video-title");
             String vidDes = titleDiv.innerText();
-
             String urlDecode = URLDecoder.decode(downloadButton.getAttribute("href"));
-
             try {
                 URL url = new URL(urlDecode);
-                HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+                HttpURLConnection httpConn = (HttpURLConnection)url.openConnection();
                 int responseCode = httpConn.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    String folderName = save_path + acc_id;
-
-                    File folder = new File(folderName);
-                    if (!folder.exists()) {
-                        if (folder.mkdir()) {
-                            System.out.println("Tạo thư mục thành công");
-                        } else {
-                            System.out.println("Không thể tạo thư mục");
-                        }
-                    }
-
-                    String sourcePath = folderName + File.separator + vid_id + ".mp4";
+                if (responseCode == 200) {
+                    String sourcePath = folderDownload + File.separator + vid_id + ".mp4";
                     InputStream inputStream = httpConn.getInputStream();
                     FileOutputStream outputStream = new FileOutputStream(sourcePath);
                     int bytesRead = -1;
@@ -135,15 +112,16 @@ public class DownloadServiceImpl implements DownloadService {
                     }
                     outputStream.close();
                     inputStream.close();
-                    rs.add(new DownloadVideoDTO(vid_id, vidDes, null, sourcePath, acc_id));//videoDesArr[i]
-                } else {
+                    rs.add(new DownloadVideoDTO(vid_id, vidDes, (String)null, sourcePath, acc_id));
+                }
+                else {
                     System.out.println("Failed to download video.");
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        // Đóng trình duyệt
         browser.close();
         playwright.close();
         System.out.println("Download successfully!");
@@ -160,7 +138,7 @@ public class DownloadServiceImpl implements DownloadService {
             if (totalHeight >= scrollHeight) {
                 break;
             }
-            Thread.sleep(1000);
+            Thread.sleep(100);
         }
 //
     }

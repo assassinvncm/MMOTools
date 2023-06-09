@@ -14,7 +14,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     #    generate-ddl: true
-    hibernate.ddl-auto: none
+    hibernate.ddl-auto: update
 #    hibernate.ddl-auto: create-drop
 #    hibernate.ddl-auto: create
 eureka:

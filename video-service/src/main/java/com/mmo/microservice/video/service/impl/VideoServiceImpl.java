@@ -217,4 +217,9 @@ public class VideoServiceImpl implements VideoService {
         }
         return rs;
     }
+
+    @Override
+    public List<String> getVidByPageIDAndAccID(Long pid, String acc_id) {
+        return rReelVidRepo.getVidByPageIDAndAccID(pid, acc_id);
+    }
 }
