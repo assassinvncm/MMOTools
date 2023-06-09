@@ -46,7 +46,7 @@ public class VideoServiceImpl implements VideoService {
 //        logger.info("Start saveLstVideoDownload");
         List<ReelRespDTO> rs = new ArrayList<>();
         PageRespDTO page = webClientBuilder.build().get()
-                .uri("http://page-service/api/page/"+p_id)
+                .uri("http://page-service/api/page/v1"+p_id)
                 .retrieve()
                 .bodyToMono(PageRespDTO.class)
                 .block();
@@ -72,7 +72,7 @@ public class VideoServiceImpl implements VideoService {
         ReelRespDTO rs = null;
         r_reel_vid rrv = rReelVidRepo.getById(dto.getVideo_id());
         PageRespDTO page = webClientBuilder.build().get()
-                .uri("http://page-service/api/page/"+dto.getPid())
+                .uri("http://page-service/api/page/v1/"+dto.getPid())
                 .retrieve()
                 .bodyToMono(PageRespDTO.class)
                 .block();
@@ -80,12 +80,12 @@ public class VideoServiceImpl implements VideoService {
             String token = CacheUtils.getToken(dto.getPid());
             if(token==null) {
                 TokenRespDTO u = webClientBuilder.build().get()
-                        .uri("http://token-service/api/token/"+page.getU_fb_id())
+                        .uri("http://token-service/api/token/v1"+page.getU_fb_id())
                         .retrieve()
                         .bodyToMono(TokenRespDTO.class)
                         .block();
                 String page_access_token = webClientBuilder.build().post()
-                        .uri("http://token-service/api/token/")
+                        .uri("http://token-service/api/token/v1/pageToken")
                         .body(BodyInserters.fromValue(TokenReqDTO.builder().token(u.getToken()).fb_page_id(page.getFb_page_id())))
                         .retrieve()
                         .bodyToMono(String.class)
